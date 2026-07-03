@@ -1,15 +1,9 @@
-![Header](header.png)
-
 <div align="center">
 
 # cocktail-machine
 
 **Автоматический коктейльный диспенсер на ESP32-S2 с сенсорным экраном, Telegram-ботом и QR-заказом**
 
-[![License](https://img.shields.io/badge/license-MIT-2C2C2C?style=for-the-badge&labelColor=1E1E1E)](LICENSE)
-[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-E7352C?style=for-the-badge&logo=espressif&labelColor=1E1E1E)](https://docs.espressif.com/projects/esp-idf/)
-[![PlatformIO](https://img.shields.io/badge/PlatformIO-F5822A?style=for-the-badge&logo=platformio&labelColor=1E1E1E)](https://platformio.org)
-[![Telegram](https://img.shields.io/badge/Telegram_Bot-26A5E4?style=for-the-badge&logo=telegram&labelColor=1E1E1E)](https://core.telegram.org/bots)
 
 </div>
 
@@ -30,7 +24,7 @@
 
 <div align="center">
 
-| Компонент | Technology |
+| Компонент | Технология |
 |-----------|-----------|
 | МК (основной) | ESP32-S2 Mini |
 | МК (камера) | ESP32-CAM (AI-Thinker) |
@@ -49,29 +43,16 @@
 
 </div>
 
-## ■ Структура репозитория
+## ■ Как это работает
 
 ```
-cocktail-machine/
-├── firmware-idf/        # Main ESP32-S2 firmware (PlatformIO + ESP-IDF)
-│   ├── src/
-│   │   ├── app_main.cpp     # State machine + HTTP server (OTA/logs)
-│   │   ├── display.*        # ILI9488 + UI screens (LovyanGFX)
-│   │   ├── pumps.*          # Pump control + calibration + ADC sensors
-│   │   ├── recipes.*        # Recipe data model + persistence
-│   │   ├── telegram_bot.h   # Telegram bot (header-only, inline keyboard UI)
-│   │   ├── led_effects.*    # WS2812B 16-effect engine
-│   │   ├── qr_serial.*      # SPI master bridge to ESP32-CAM
-│   │   └── xpt2046.*        # Touch controller driver
-│   └── data/                # SPIFFS image: recipes.json, fonts, wifi.txt, bot.txt
-├── cam-firmware/        # ESP32-CAM QR scanner firmware (SPI slave, quirc)
-├── bot-desktop-test/    # Desktop bot test harness (libcurl + cJSON)
-├── PCB/                 # Gerber files for custom boards (MCU + sensors)
-├── docs/                # Flashing guides
-└── SCH_*.svg            # Circuit schematics
+1. Пользователь выбирает рецепт на сенсорном экране, сканирует QR-код (ESP32-CAM → SPI-мост) или отправляет заказ через интерфейс инлайн-клавиатуры Telegram-бота.
+2. Если стакан убирают в процессе налива, все насосы автоматически останавливаются и возобновляют работу при его возврате — определяется ADC-датчиком наличия стакана.
+3. Каждый из 6 перистальтических насосов работает на откалиброванной скорости потока (мл/сек) под управлением LEDC PWM; поканальные датчики воздушных пузырей останавливают насос при пересыхании магистрали.
+4. Светодиоды WS2812B анимируются через RMT DMA в процессе налива; рецепты, данные калибровки и статистика хранятся в SPIFFS и управляются удалённо через Telegram-бот или HTTP-сервер OTA.
 ```
 
-## ■ Запуск
+## ■ Использование
 
 ### Основная прошивка
 
@@ -95,6 +76,28 @@ pio run --target uploadfs     # прошивка образа SPIFFS (data/wifi.
 ### Telegram-бот
 
 Учётные данные Wi-Fi и токен Telegram-бота считываются во время выполнения из SPIFFS — поместите SSID/пароль (две строки) в `firmware-idf/data/wifi.txt`, а токен бота в `firmware-idf/data/bot.txt`, затем прошейте образ файловой системы (`pio run -t uploadfs`). Бот обращается к Telegram API через HTTP-обратный прокси (`TG_PROXY_URL`) и управляется полностью через интерфейс с инлайн-клавиатурой.
+
+## ■ Структура репозитория
+
+```
+cocktail-machine/
+├── firmware-idf/        # Main ESP32-S2 firmware (PlatformIO + ESP-IDF)
+│   ├── src/
+│   │   ├── app_main.cpp     # State machine + HTTP server (OTA/logs)
+│   │   ├── display.*        # ILI9488 + UI screens (LovyanGFX)
+│   │   ├── pumps.*          # Pump control + calibration + ADC sensors
+│   │   ├── recipes.*        # Recipe data model + persistence
+│   │   ├── telegram_bot.h   # Telegram bot (header-only, inline keyboard UI)
+│   │   ├── led_effects.*    # WS2812B 16-effect engine
+│   │   ├── qr_serial.*      # SPI master bridge to ESP32-CAM
+│   │   └── xpt2046.*        # Touch controller driver
+│   └── data/                # SPIFFS image: recipes.json, fonts, wifi.txt, bot.txt
+├── cam-firmware/        # ESP32-CAM QR scanner firmware (SPI slave, quirc)
+├── bot-desktop-test/    # Desktop bot test harness (libcurl + cJSON)
+├── PCB/                 # Gerber files for custom boards (MCU + sensors)
+├── docs/                # Flashing guides
+└── SCH_*.svg            # Circuit schematics
+```
 
 ## ■ Лицензия
 
